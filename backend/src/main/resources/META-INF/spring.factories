@@ -1,0 +1,4 @@
+# Registers Bookwell's hosted PostgreSQL URL normalizer before the
+# DataSource auto-configuration runs. Spring Boot loads EnvironmentPostProcessor
+# implementations from this file (not from an *.imports file).
+org.springframework.boot.env.EnvironmentPostProcessor=com.bookwell.config.DatabaseUrlEnvironmentPostProcessor

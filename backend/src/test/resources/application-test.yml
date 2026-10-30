@@ -1,0 +1,53 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 12
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    clean-disabled: true
+
+app:
+  env: test
+  security:
+    jwt-secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtdGhhdC1pcy1sb25nLWVub3VnaC1mb3ItaHMyNTY=
+    access-token-ttl: PT15M
+    refresh-token-ttl: P14D
+    cookie-secure: false
+    cookie-same-site: Lax
+    refresh-cookie-name: bookwell_refresh
+    cors-allowed-origins:
+      - http://localhost:5173
+  booking:
+    default-time-zone: Asia/Kolkata
+    default-currency: INR
+    start-interval-minutes: 15
+    cancellation-cutoff: PT2H
+    min-lead-time: PT30M
+    max-advance-days: 60
+  notifications:
+    enabled: true
+    mail-mode: log
+    reminder-lead-time: PT24H
+    max-attempts: 5
+    poll-interval-ms: 3600000
+    from-address: no-reply@bookwell.test
+    from-name: Bookwell Test
+    app-public-url: http://localhost:5173
+    worker-enabled: false
+  seed:
+    enabled: false
+  bootstrap:
+    admin-email: ""
+    admin-password: ""
+  rate-limit:
+    enabled: false
+    auth-requests-per-minute: 10
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.springframework.test: warn

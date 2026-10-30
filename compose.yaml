@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: bookwell-postgres
+    environment:
+      POSTGRES_DB: bookwell
+      POSTGRES_USER: bookwell
+      POSTGRES_PASSWORD: bookwell
+    ports:
+      - "5432:5432"
+    volumes:
+      - bookwell_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookwell -d bookwell"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bookwell_pgdata:

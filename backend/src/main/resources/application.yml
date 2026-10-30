@@ -1,0 +1,118 @@
+spring:
+  application:
+    name: bookwell-api
+  datasource:
+    # DB_URL may be a JDBC URL or a hosted postgres:// / postgresql:// URI.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bookwell}
+    username: ${DB_USERNAME:bookwell}
+    password: ${DB_PASSWORD:bookwell}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 10000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        default_batch_fetch_size: 50
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+  task:
+    scheduling:
+      pool:
+        size: 2
+    execution:
+      shutdown:
+        await-termination: true
+        await-termination-period: 10s
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+app:
+  env: ${APP_ENV:dev}
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:PT15M}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:P14D}
+    cookie-secure: ${AUTH_COOKIE_SECURE:false}
+    cookie-same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
+    cookie-domain: ${AUTH_COOKIE_DOMAIN:}
+    cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    trust-forwarded-headers: ${TRUST_FORWARDED_HEADERS:false}
+    refresh-cookie-name: ${AUTH_REFRESH_COOKIE_NAME:bookwell_refresh}
+  booking:
+    default-time-zone: ${DEFAULT_TIME_ZONE:Asia/Kolkata}
+    default-currency: ${DEFAULT_CURRENCY:INR}
+    start-interval-minutes: ${BOOKING_START_INTERVAL_MINUTES:30}
+    cancellation-cutoff: ${CANCELLATION_CUTOFF:PT2H}
+    min-lead-time: ${BOOKING_MIN_LEAD_TIME:PT30M}
+    max-advance-days: ${BOOKING_MAX_ADVANCE_DAYS:60}
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:true}
+    mail-mode: ${MAIL_MODE:log}
+    reminder-lead-time: ${REMINDER_LEAD_TIME:PT24H}
+    max-attempts: ${NOTIFICATION_MAX_ATTEMPTS:5}
+    poll-interval-ms: ${NOTIFICATION_POLL_INTERVAL_MS:30000}
+    from-address: ${MAIL_FROM:no-reply@bookwell.local}
+    from-name: ${MAIL_FROM_NAME:Bookwell}
+    app-public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+    smtp-host: ${MAIL_HOST:}
+    smtp-port: ${MAIL_PORT:587}
+    smtp-username: ${MAIL_USERNAME:}
+    smtp-password: ${MAIL_PASSWORD:}
+    smtp-start-tls: ${MAIL_STARTTLS:true}
+    smtp-auth: ${MAIL_AUTH:true}
+    worker-enabled: ${NOTIFICATION_WORKER_ENABLED:true}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+    admin-email: ${SEED_ADMIN_EMAIL:}
+    admin-password: ${SEED_ADMIN_PASSWORD:}
+    admin-name: ${SEED_ADMIN_NAME:Platform Administrator}
+    provider-email: ${SEED_PROVIDER_EMAIL:}
+    provider-password: ${SEED_PROVIDER_PASSWORD:}
+    customer-email: ${SEED_CUSTOMER_EMAIL:}
+    customer-password: ${SEED_CUSTOMER_PASSWORD:}
+  bootstrap:
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    admin-name: ${BOOTSTRAP_ADMIN_NAME:Platform Administrator}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    auth-requests-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:10}
