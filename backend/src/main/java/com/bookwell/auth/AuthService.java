@@ -62,22 +62,12 @@ public class AuthService {
     public AuthResult registerCustomer(AuthDtos.RegisterRequest request, RequestInfo info) {
         String email = UserAccountService.normalizeEmail(request.email());
         assertPassword(request.password(), email);
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user != null) {
-            if (user.getRole() == Role.CUSTOMER && !user.isEmailVerified()) {
-                user.setPasswordHash(passwordEncoder.encode(request.password()));
-                user.setFullName(request.fullName().trim());
-                user.setPhone(blankToNull(request.phone()));
-                refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
-                userRepository.save(user);
-            } else {
-                throw AppExceptions.conflict("EMAIL_IN_USE", "An account with this email already exists.");
-            }
-        } else {
-            user = User.create(email, passwordEncoder.encode(request.password()), Role.CUSTOMER,
-                    request.fullName().trim(), blankToNull(request.phone()));
-            userRepository.save(user);
+        if (userRepository.existsByEmail(email)) {
+            throw AppExceptions.conflict("EMAIL_IN_USE", "An account with this email already exists.");
         }
+        User user = User.create(email, passwordEncoder.encode(request.password()), Role.CUSTOMER,
+                request.fullName().trim(), blankToNull(request.phone()));
+        userRepository.save(user);
         String rawToken = emailVerificationService.issueFor(user);
         emailVerificationService.sendVerificationEmailAsync(user, rawToken);
         return createSession(user, UUID.randomUUID(), info);

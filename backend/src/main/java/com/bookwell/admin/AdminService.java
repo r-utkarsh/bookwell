@@ -109,9 +109,6 @@ public class AdminService {
             userRepository.save(user);
             refreshTokenRepository.revokeAllForUser(user.getId(), now);
         } else if (request.status() == ProviderStatus.APPROVED) {
-            if (!user.isEmailVerified()) {
-                throw AppExceptions.conflict("EMAIL_NOT_VERIFIED", "Provider email must be verified before approval.");
-            }
             provider.setStatus(ProviderStatus.APPROVED);
             user.setEnabled(true);
             userRepository.save(user);

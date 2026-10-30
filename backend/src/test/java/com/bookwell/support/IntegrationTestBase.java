@@ -111,12 +111,14 @@ public abstract class IntegrationTestBase {
 
     protected User newUser(Role role, String rawPassword) {
         String email = uniqueEmail(role.name().toLowerCase());
-        return inTx(() -> users.save(User.create(
+        User user = User.create(
                 email,
                 passwordEncoder.encode(rawPassword),
                 role,
                 "Test " + role.name().toLowerCase(),
-                "+91 90000 00000")));
+                "+91 90000 00000");
+        user.markEmailVerified(Instant.now());
+        return inTx(() -> users.save(user));
     }
 
     protected ProviderProfile newProvider() {

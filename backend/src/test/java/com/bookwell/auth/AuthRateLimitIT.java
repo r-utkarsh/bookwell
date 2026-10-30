@@ -1,5 +1,6 @@
 package com.bookwell.auth;
 
+import com.bookwell.config.RateLimitFilter;
 import com.bookwell.support.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,14 @@ class AuthRateLimitIT extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
+    @org.junit.jupiter.api.BeforeEach
+    void resetLimits() {
+        rateLimitFilter.clear();
+    }
 
     @Test
     void fourthLoginAttemptFromOneIpIsRateLimited() throws Exception {

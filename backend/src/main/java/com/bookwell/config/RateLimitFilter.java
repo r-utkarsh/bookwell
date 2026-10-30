@@ -44,6 +44,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.objectMapper = objectMapper;
     }
 
+    public void clear() {
+        counters.clear();
+    }
+
     private static String canonicalPath(HttpServletRequest request) {
         String servletPath = request.getServletPath();
         String pathInfo = request.getPathInfo();
