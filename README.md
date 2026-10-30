@@ -332,7 +332,7 @@ In PowerShell:
 
 ```powershell
 cd backend
-$env:JAVA_HOME = "C:\path\to\jdk-21"   # only if Java 21 is not already active
+$env:JAVA_HOME = "C:\Users\utkar\.jdks\jdk-21.0.13+9"   # only if Java 21 is not already active
 $env:APP_ENV = "dev"
 $env:DB_URL = "jdbc:postgresql://localhost:5432/bookwell"
 $env:DB_USERNAME = "bookwell"
@@ -342,11 +342,11 @@ $env:NOTIFICATION_WORKER_ENABLED = "true"
 $env:AUTH_COOKIE_SECURE = "false"
 $env:SEED_ENABLED = "true"
 $env:SEED_ADMIN_EMAIL = "admin@bookwell.demo"
-$env:SEED_ADMIN_PASSWORD = "DemoAdmin!2026"
+$env:SEED_ADMIN_PASSWORD = "<choose-a-strong-password>" # e.g. generate via: openssl rand -base64 18
 $env:SEED_PROVIDER_EMAIL = "aarohi@bookwell.demo"
-$env:SEED_PROVIDER_PASSWORD = "DemoProvider!2026"
+$env:SEED_PROVIDER_PASSWORD = "<choose-a-strong-password>"
 $env:SEED_CUSTOMER_EMAIL = "riya@bookwell.demo"
-$env:SEED_CUSTOMER_PASSWORD = "DemoCustomer!2026"
+$env:SEED_CUSTOMER_PASSWORD = "<choose-a-strong-password>"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -375,14 +375,13 @@ frontend environment variable is needed locally.
 
 ### Demo accounts
 
-The seed block above creates three accounts. Passwords are deliberately supplied
-through `SEED_*` environment variables, not hardcoded in application source.
+The seed block above creates three accounts. Choose your own passwords for each account; each must satisfy the password policy. Generate one with: `openssl rand -base64 18`.
 
 | Role | Email | Password (from the block above) |
 |---|---|---|
-| Admin | `admin@bookwell.demo` | `DemoAdmin!2026` |
-| Provider | `aarohi@bookwell.demo` | `DemoProvider!2026` |
-| Customer | `riya@bookwell.demo` | `DemoCustomer!2026` |
+| Admin | `admin@bookwell.demo` | `<your-chosen-admin-password>` |
+| Provider | `aarohi@bookwell.demo` | `<your-chosen-provider-password>` |
+| Customer | `riya@bookwell.demo` | `<your-chosen-customer-password>` |
 
 These are development/demo credentials only. `SEED_ENABLED=true` is rejected
 when `APP_ENV=production`.
