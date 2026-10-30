@@ -225,6 +225,9 @@ public class BookingService {
         }
         ProviderProfile provider = providerRepository.findByUserId(actor.id())
                 .orElseThrow(() -> AppExceptions.notFound("Provider profile not found."));
+        if (provider.getStatus() == ProviderStatus.SUSPENDED) {
+            throw AppExceptions.forbidden("Suspended providers cannot access calendar.");
+        }
         ZoneId zone = ZoneId.of(provider.getTimeZone());
         LocalDate effectiveFrom = from == null ? LocalDate.now(clock.withZone(zone)) : from;
         LocalDate effectiveTo = to == null ? effectiveFrom.plusDays(30) : to;
@@ -323,6 +326,9 @@ public class BookingService {
         }
         ProviderProfile provider = providerRepository.findByUserId(actor.id())
                 .orElseThrow(() -> AppExceptions.forbidden("Provider profile not found."));
+        if (provider.getStatus() == ProviderStatus.SUSPENDED) {
+            throw AppExceptions.forbidden("Suspended providers cannot manage appointments.");
+        }
         if (!appointment.getProvider().getId().equals(provider.getId())) {
             throw AppExceptions.forbidden("You can only manage appointments for your own business.");
         }

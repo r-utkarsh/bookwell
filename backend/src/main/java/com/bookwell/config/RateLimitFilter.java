@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Small fixed-window per-IP rate limiter for authentication endpoints.
@@ -28,9 +29,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             "/api/v1/auth/register/provider"
     );
     private static final long WINDOW_MILLIS = 60_000L;
+    private static final int MAX_ENTRIES = 10_000;
 
     private final AppProperties properties;
     private final ObjectMapper objectMapper;
+    private final AtomicLong lastCleanup = new AtomicLong(0);
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
 
     public RateLimitFilter(AppProperties properties, ObjectMapper objectMapper) {
@@ -48,9 +51,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+        long now = System.currentTimeMillis();
+
+        // Throttled cleanup: runs at most once per WINDOW_MILLIS across threads
+        long last = lastCleanup.get();
+        if (now - last > WINDOW_MILLIS && lastCleanup.compareAndSet(last, now)) {
+            counters.entrySet().removeIf(entry -> now - entry.getValue().windowStart >= WINDOW_MILLIS);
+        }
+
+        // Hard capacity safeguard against rapid memory exhaustion attacks
+        if (counters.size() >= MAX_ENTRIES) {
+            counters.entrySet().removeIf(entry -> now - entry.getValue().windowStart >= WINDOW_MILLIS);
+            if (counters.size() >= MAX_ENTRIES) {
+                counters.clear();
+            }
+        }
+
         String ip = RequestMetadata.clientIp(request, properties.security().trustForwardedHeaders());
         String key = ip + ":" + request.getRequestURI();
-        long now = System.currentTimeMillis();
         Counter counter = counters.computeIfAbsent(key, ignored -> new Counter(now));
         boolean allowed;
         synchronized (counter) {
@@ -60,9 +78,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
             counter.count++;
             allowed = counter.count <= properties.rateLimit().authRequestsPerMinute();
-        }
-        if (counters.size() > 10_000) {
-            counters.entrySet().removeIf(entry -> now - entry.getValue().windowStart > WINDOW_MILLIS * 5);
         }
         if (!allowed) {
             response.setStatus(429);

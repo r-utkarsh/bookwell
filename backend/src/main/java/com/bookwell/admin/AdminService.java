@@ -98,16 +98,29 @@ public class AdminService {
                                                            AdminDtos.UpdateProviderStatusRequest request) {
         ProviderProfile provider = providerRepository.findDetailedById(providerId)
                 .orElseThrow(() -> AppExceptions.notFound("Provider not found."));
-        if (request.status() == ProviderStatus.APPROVED && !provider.getUser().isEnabled()) {
-            throw AppExceptions.conflict("USER_DISABLED", "Enable the provider's user account before approving.");
+
+        User user = provider.getUser();
+        Instant now = Instant.now(clock);
+
+        if (request.status() == ProviderStatus.SUSPENDED) {
+            provider.setStatus(ProviderStatus.SUSPENDED);
+            user.setEnabled(false);
+            userRepository.save(user);
+            refreshTokenRepository.revokeAllForUser(user.getId(), now);
+        } else if (request.status() == ProviderStatus.APPROVED) {
+            provider.setStatus(ProviderStatus.APPROVED);
+            user.setEnabled(true);
+            userRepository.save(user);
+        } else {
+            provider.setStatus(request.status());
         }
-        provider.setStatus(request.status());
+
         providerRepository.save(provider);
         long serviceCount = providerRepository.summarizeActiveServices(List.of(providerId)).stream()
                 .findFirst().map(row -> ((Number) row[1]).longValue()).orElse(0L);
         return new AdminDtos.AdminProviderDto(
-                provider.getId(), provider.getUser().getId(), provider.getUser().getFullName(),
-                provider.getUser().getEmail(), provider.getDisplayName(), provider.getBusinessName(),
+                provider.getId(), user.getId(), user.getFullName(),
+                user.getEmail(), provider.getDisplayName(), provider.getBusinessName(),
                 provider.getCategory(), provider.getCity(), provider.getStatus(), provider.isFeatured(),
                 serviceCount, provider.getCreatedAt());
     }

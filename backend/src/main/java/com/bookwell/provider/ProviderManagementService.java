@@ -41,8 +41,12 @@ public class ProviderManagementService {
 
     @Transactional(readOnly = true)
     public ProviderProfile currentProvider(UUID userId) {
-        return providerRepository.findDetailedByUserId(userId)
+        ProviderProfile provider = providerRepository.findDetailedByUserId(userId)
                 .orElseThrow(() -> AppExceptions.notFound("Provider profile not found."));
+        if (provider.getStatus() == ProviderStatus.SUSPENDED) {
+            throw AppExceptions.forbidden("This provider account is suspended.");
+        }
+        return provider;
     }
 
     @Transactional(readOnly = true)
