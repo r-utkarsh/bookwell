@@ -16,8 +16,8 @@ const passwordField = z
   .min(10, 'Use at least 10 characters.')
   .max(72, 'Use no more than 72 characters.')
   .regex(
-    /^(?=.*[A-Za-z])(?=.*\d)[\x21-\x7E]+$/,
-    'Include a letter and a number, with no spaces.',
+    /^(?=.*\p{L})(?=.*\d)[^\p{Cc}\u2028\u2029]+$/u,
+    'Include at least one letter and one number.',
   )
 
 const schema = z

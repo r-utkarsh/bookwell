@@ -17,6 +17,7 @@ export interface UserSummary {
   role: Role
   phone?: string | null
   enabled: boolean
+  emailVerified: boolean
   providerId?: string | null
   providerStatus?: ProviderStatus | null
 }

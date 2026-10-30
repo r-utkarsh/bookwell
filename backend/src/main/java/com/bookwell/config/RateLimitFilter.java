@@ -23,11 +23,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private static final Set<String> PROTECTED_PATHS = Set.of(
+    private static final Set<String> AUTH_PATHS = Set.of(
             "/api/v1/auth/login",
             "/api/v1/auth/register",
-            "/api/v1/auth/register/provider"
+            "/api/v1/auth/register/provider",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/verify-email/resend"
     );
+    private static final String REFRESH_PATH = "/api/v1/auth/refresh";
     private static final long WINDOW_MILLIS = 60_000L;
     private static final int MAX_ENTRIES = 10_000;
 
@@ -41,11 +44,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.objectMapper = objectMapper;
     }
 
+    private static String canonicalPath(HttpServletRequest request) {
+        String servletPath = request.getServletPath();
+        String pathInfo = request.getPathInfo();
+        String path = pathInfo == null ? servletPath : servletPath + pathInfo;
+        if (path != null && path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path == null ? "" : path;
+    }
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !properties.rateLimit().enabled()
-                || !"POST".equalsIgnoreCase(request.getMethod())
-                || !PROTECTED_PATHS.contains(request.getRequestURI());
+        if (!properties.rateLimit().enabled() || !"POST".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String path = canonicalPath(request);
+        return !AUTH_PATHS.contains(path) && !REFRESH_PATH.equals(path);
     }
 
     @Override
@@ -67,8 +82,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
             }
         }
 
-        String ip = RequestMetadata.clientIp(request, properties.security().trustForwardedHeaders());
-        String key = ip + ":" + request.getRequestURI();
+        String path = canonicalPath(request);
+        int limit = REFRESH_PATH.equals(path)
+                ? properties.rateLimit().refreshRequestsPerMinute()
+                : properties.rateLimit().authRequestsPerMinute();
+
+        String ip = RequestMetadata.clientIp(request, properties.security().trustedClientIpHeader());
+        String key = ip + ":" + path;
         Counter counter = counters.computeIfAbsent(key, ignored -> new Counter(now));
         boolean allowed;
         synchronized (counter) {
@@ -77,7 +97,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 counter.count = 0;
             }
             counter.count++;
-            allowed = counter.count <= properties.rateLimit().authRequestsPerMinute();
+            allowed = counter.count <= limit;
         }
         if (!allowed) {
             response.setStatus(429);
@@ -85,7 +105,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             objectMapper.writeValue(response.getOutputStream(), new ApiError(
                     Instant.now(), 429, "RATE_LIMITED",
-                    "Too many attempts. Please wait a minute and try again.", request.getRequestURI(), null));
+                    "Too many attempts. Please wait a minute and try again.", path, null));
             return;
         }
         chain.doFilter(request, response);

@@ -36,6 +36,7 @@ public class UserAccountService {
                 user.getRole(),
                 user.getPhone(),
                 user.isEnabled(),
+                user.isEmailVerified(),
                 provider != null ? provider.getId() : null,
                 provider != null ? provider.getStatus() : null
         );

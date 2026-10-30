@@ -97,6 +97,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/auth/register", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/register/provider", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/verify-email", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/login", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/refresh", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/logout", "POST"),

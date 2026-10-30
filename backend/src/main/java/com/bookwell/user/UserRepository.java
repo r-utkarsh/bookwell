@@ -21,8 +21,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             select u from User u
             where u.role = :role
               and (:enabled is null or u.enabled = :enabled)
-              and (:q = '' or lower(u.email) like lower(concat('%', :q, '%'))
-                   or lower(u.fullName) like lower(concat('%', :q, '%')))
+              and (:q = '' or lower(u.email) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(u.fullName) like lower(concat('%', :q, '%')) escape '!')
             """)
     Page<User> searchByRole(@Param("role") Role role, @Param("q") String q,
                             @Param("enabled") Boolean enabled, Pageable pageable);

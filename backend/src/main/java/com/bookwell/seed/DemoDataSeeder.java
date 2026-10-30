@@ -23,6 +23,7 @@ import com.bookwell.user.User;
 import com.bookwell.user.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.annotation.Order;
@@ -57,6 +58,9 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
+
     public DemoDataSeeder(AppProperties properties,
                           UserRepository userRepository,
                           ProviderProfileRepository providerRepository,
@@ -83,6 +87,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         if (!properties.seed().enabled()) {
             return;
         }
+        assertLocalDatabase();
         if (properties.isProduction()) {
             throw new IllegalStateException("Demo data seeding is disabled in production.");
         }
@@ -148,6 +153,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
         validatePassword(password, "seed password for " + email);
         User user = User.create(email, passwordEncoder.encode(password), role, fullName, phone);
+        user.markEmailVerified(Instant.now());
         userRepository.save(user);
         return user;
     }
@@ -311,6 +317,18 @@ public class DemoDataSeeder implements ApplicationRunner {
     private void require(String value, String name) {
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(name + " is required when SEED_ENABLED=true.");
+        }
+    }
+
+    private void assertLocalDatabase() {
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            return;
+        }
+        String url = datasourceUrl.toLowerCase(java.util.Locale.ROOT);
+        boolean local = url.contains("//localhost") || url.contains("//127.0.0.1")
+                || url.contains("//[::1]") || url.contains("//postgres");
+        if (!local) {
+            throw new IllegalStateException("Demo seeding is only allowed against a local database.");
         }
     }
 

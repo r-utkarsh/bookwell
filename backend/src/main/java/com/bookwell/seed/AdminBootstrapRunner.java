@@ -59,6 +59,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         String name = properties.bootstrap().adminName() == null || properties.bootstrap().adminName().isBlank()
                 ? "Platform Administrator" : properties.bootstrap().adminName().trim();
         User admin = User.create(normalized, passwordEncoder.encode(password), Role.ADMIN, name, null);
+        admin.markEmailVerified(java.time.Instant.now());
         userRepository.save(admin);
         log.info("Bootstrap administrator {} created. Remove BOOTSTRAP_ADMIN_EMAIL and "
                 + "BOOTSTRAP_ADMIN_PASSWORD from the environment after verifying sign-in.", normalized);

@@ -24,4 +24,8 @@ public final class AppExceptions {
     public static ApiException conflict(String code, String message) {
         return new ApiException(409, code, message);
     }
+
+    public static ApiException tooManyRequests(String code, String message) {
+        return new ApiException(429, code, message);
+    }
 }

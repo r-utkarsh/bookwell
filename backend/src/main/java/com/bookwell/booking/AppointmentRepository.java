@@ -20,6 +20,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     Optional<Appointment> findDetailedById(@Param("id") UUID id);
 
     @Query("""
+            select count(a) from Appointment a
+            where a.customer.id = :customerId
+              and a.status = 'CONFIRMED'
+              and a.startAt > :now
+            """)
+    long countUpcomingConfirmedForCustomer(@Param("customerId") UUID customerId, @Param("now") Instant now);
+
+    @Query("""
             select a from Appointment a
             where a.provider.id = :providerId
               and a.status in :statuses

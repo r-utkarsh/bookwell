@@ -88,30 +88,37 @@ public final class ProviderDtos {
     public record UpdateProviderProfileRequest(
             @NotBlank(message = "Display name is required.")
             @Size(min = 2, max = 140, message = "Display name must be between 2 and 140 characters.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String displayName,
 
             @NotBlank(message = "Business name is required.")
             @Size(min = 2, max = 160, message = "Business name must be between 2 and 160 characters.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String businessName,
 
             @NotBlank(message = "Category is required.")
             @Size(max = 60, message = "Category is too long.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String category,
 
             @Size(max = 4000, message = "Description is too long.")
             String description,
 
             @Size(max = 100, message = "City is too long.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String city,
 
             @Size(max = 240, message = "Address is too long.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String address,
 
             @Size(max = 30, message = "Phone number is too long.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String phone,
 
             @NotBlank(message = "Time zone is required.")
             @Size(max = 64, message = "Time zone is too long.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String timeZone
     ) {
     }
@@ -119,6 +126,7 @@ public final class ProviderDtos {
     public record ServiceRequest(
             @NotBlank(message = "Service name is required.")
             @Size(min = 2, max = 140, message = "Service name must be between 2 and 140 characters.")
+            @Pattern(regexp = "^[^\\p{Cc}\\u2028\\u2029]*$", message = "Contains invalid characters.")
             String name,
 
             @Size(max = 4000, message = "Description is too long.")

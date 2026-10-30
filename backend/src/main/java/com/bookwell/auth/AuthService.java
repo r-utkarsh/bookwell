@@ -32,6 +32,9 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserAccountService accountService;
     private final AppProperties properties;
+    private final LoginAttemptLimiter loginAttemptLimiter;
+    private final EmailVerificationService emailVerificationService;
+    private final String dummyHash;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthService(UserRepository userRepository,
@@ -40,33 +43,50 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        UserAccountService accountService,
-                       AppProperties properties) {
+                       AppProperties properties,
+                       LoginAttemptLimiter loginAttemptLimiter,
+                       EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.providerRepository = providerRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.dummyHash = passwordEncoder.encode("not-a-real-password-1");
         this.jwtService = jwtService;
         this.accountService = accountService;
         this.properties = properties;
+        this.loginAttemptLimiter = loginAttemptLimiter;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
     public AuthResult registerCustomer(AuthDtos.RegisterRequest request, RequestInfo info) {
         String email = UserAccountService.normalizeEmail(request.email());
-        assertPassword(request.password());
-        if (userRepository.existsByEmail(email)) {
-            throw AppExceptions.conflict("EMAIL_IN_USE", "An account with this email already exists.");
+        assertPassword(request.password(), email);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null) {
+            if (user.getRole() == Role.CUSTOMER && !user.isEmailVerified()) {
+                user.setPasswordHash(passwordEncoder.encode(request.password()));
+                user.setFullName(request.fullName().trim());
+                user.setPhone(blankToNull(request.phone()));
+                refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
+                userRepository.save(user);
+            } else {
+                throw AppExceptions.conflict("EMAIL_IN_USE", "An account with this email already exists.");
+            }
+        } else {
+            user = User.create(email, passwordEncoder.encode(request.password()), Role.CUSTOMER,
+                    request.fullName().trim(), blankToNull(request.phone()));
+            userRepository.save(user);
         }
-        User user = User.create(email, passwordEncoder.encode(request.password()), Role.CUSTOMER,
-                request.fullName().trim(), blankToNull(request.phone()));
-        userRepository.save(user);
+        String rawToken = emailVerificationService.issueFor(user);
+        emailVerificationService.sendVerificationEmailAsync(user, rawToken);
         return createSession(user, UUID.randomUUID(), info);
     }
 
     @Transactional
     public AuthResult registerProvider(AuthDtos.ProviderRegisterRequest request, RequestInfo info) {
         String email = UserAccountService.normalizeEmail(request.email());
-        assertPassword(request.password());
+        assertPassword(request.password(), email);
         if (userRepository.existsByEmail(email)) {
             throw AppExceptions.conflict("EMAIL_IN_USE", "An account with this email already exists.");
         }
@@ -87,6 +107,8 @@ public class AuthService {
                 properties.booking().defaultCurrency()
         );
         providerRepository.save(provider);
+        String rawToken = emailVerificationService.issueFor(user);
+        emailVerificationService.sendVerificationEmailAsync(user, rawToken);
         return createSession(user, UUID.randomUUID(), info);
     }
 
@@ -127,10 +149,19 @@ public class AuthService {
     @Transactional
     public AuthResult login(AuthDtos.LoginRequest request, RequestInfo info) {
         String email = UserAccountService.normalizeEmail(request.email());
+        String ip = info != null ? info.ipAddress() : "";
+        if (loginAttemptLimiter.isBlocked(email, ip)) {
+            throw AppExceptions.tooManyRequests("TOO_MANY_ATTEMPTS",
+                    "Too many failed login attempts. Please wait a few minutes.");
+        }
         User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null || !passwordEncoder.matches(request.password(), user.getPasswordHash()) || !user.isEnabled()) {
+        String hash = user != null ? user.getPasswordHash() : dummyHash;
+        boolean passwordOk = passwordEncoder.matches(request.password(), hash);
+        if (user == null || !passwordOk || !user.isEnabled()) {
+            loginAttemptLimiter.recordFailure(email, ip);
             throw AppExceptions.unauthorized("Email or password is incorrect.");
         }
+        loginAttemptLimiter.recordSuccess(email, ip);
         return createSession(user, UUID.randomUUID(), info);
     }
 
@@ -178,8 +209,8 @@ public class AuthService {
         }
     }
 
-    private void assertPassword(String password) {
-        if (!PasswordPolicy.isValid(password)) {
+    private void assertPassword(String password, String email) {
+        if (!PasswordPolicy.isValid(password, email)) {
             throw AppExceptions.badRequest("WEAK_PASSWORD", PasswordPolicy.MESSAGE);
         }
     }

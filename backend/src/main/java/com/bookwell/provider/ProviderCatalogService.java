@@ -2,6 +2,7 @@ package com.bookwell.provider;
 
 import com.bookwell.common.api.PageResponse;
 import com.bookwell.common.exception.AppExceptions;
+import com.bookwell.common.util.QueryUtils;
 import com.bookwell.schedule.WeeklyScheduleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +35,7 @@ public class ProviderCatalogService {
     public PageResponse<ProviderDtos.ProviderCard> search(int page, int size, String query, String category) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 48);
-        String q = query == null ? "" : query.trim();
+        String q = QueryUtils.escapeLike(query);
         String cat = category == null ? "" : category.trim();
         Page<ProviderProfile> providers = providerRepository.searchPublic(
                 ProviderStatus.APPROVED, q, cat,

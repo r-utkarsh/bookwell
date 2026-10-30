@@ -23,7 +23,7 @@ public record AppProperties(
             String cookieSameSite,
             String cookieDomain,
             List<String> corsAllowedOrigins,
-            boolean trustForwardedHeaders,
+            String trustedClientIpHeader,
             String refreshCookieName
     ) {
     }
@@ -82,7 +82,8 @@ public record AppProperties(
 
     public record RateLimit(
             boolean enabled,
-            int authRequestsPerMinute
+            int authRequestsPerMinute,
+            int refreshRequestsPerMinute
     ) {
     }
 

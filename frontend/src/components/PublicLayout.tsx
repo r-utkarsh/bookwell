@@ -1,9 +1,11 @@
 import { CalendarCheck, Menu, Search, Sparkles, X } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from '@/auth/AuthContext'
 import { Brand } from '@/components/Brand'
 import { Avatar, buttonClasses, FullPageLoader } from '@/components/ui'
+import { getErrorMessage, resendVerificationRequest } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { roleHome } from '@/lib/roles'
 import type { Role } from '@/types/api'
@@ -129,6 +131,26 @@ export function PublicLayout() {
           </div>
         )}
       </header>
+
+      {user && user.emailVerified === false && (
+        <div className="border-b border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-900">
+          <span>Your email address is not verified yet. Please verify your email before booking appointments. </span>
+          <button
+            type="button"
+            className="font-semibold underline hover:text-amber-950"
+            onClick={async () => {
+              try {
+                await resendVerificationRequest()
+                toast.success('Verification email sent! Please check your inbox.')
+              } catch (err) {
+                toast.error(getErrorMessage(err))
+              }
+            }}
+          >
+            Resend verification email
+          </button>
+        </div>
+      )}
 
       <main id="main-content" className="flex-1">
         <Suspense fallback={<FullPageLoader label="Opening the page" />}>

@@ -15,6 +15,7 @@ const ForProvidersPage = lazy(() => import('@/pages/ForProvidersPage').then((mod
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage').then((module) => ({ default: module.RegisterPage })))
 const ProviderRegisterPage = lazy(() => import('@/pages/ProviderRegisterPage').then((module) => ({ default: module.ProviderRegisterPage })))
+const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })))
 const CustomerDashboardPage = lazy(() => import('@/pages/CustomerDashboardPage').then((module) => ({ default: module.CustomerDashboardPage })))
 
 const ProviderOverviewPage = lazy(() => import('@/pages/provider/ProviderOverviewPage').then((module) => ({ default: module.ProviderOverviewPage })))
@@ -72,6 +73,7 @@ export default function App() {
               <Route path="login" element={<LoginPage />} />
               <Route path="register" element={<RegisterPage />} />
               <Route path="register/provider" element={<ProviderRegisterPage />} />
+              <Route path="verify-email" element={<VerifyEmailPage />} />
               <Route
                 path="account"
                 element={

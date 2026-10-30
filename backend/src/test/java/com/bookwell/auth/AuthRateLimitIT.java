@@ -57,4 +57,20 @@ class AuthRateLimitIT extends IntegrationTestBase {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
     }
+
+    @Test
+    void encodedPathVariantsShareTheSameBucket() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post(java.net.URI.create("/api/v1/auth/logi%6E"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"email\":\"nobody@test.local\",\"password\":\"WrongPass!2026\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"nobody@test.local\",\"password\":\"WrongPass!2026\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "60"))
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
+    }
 }

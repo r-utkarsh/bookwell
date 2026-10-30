@@ -29,10 +29,14 @@ public class AuthController {
     private static final String REFRESH_PATH = "/api/v1/auth";
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
     private final AppProperties properties;
 
-    public AuthController(AuthService authService, AppProperties properties) {
+    public AuthController(AuthService authService,
+                          EmailVerificationService emailVerificationService,
+                          AppProperties properties) {
         this.authService = authService;
+        this.emailVerificationService = emailVerificationService;
         this.properties = properties;
     }
 
@@ -95,6 +99,18 @@ public class AuthController {
         return authService.me(user.id());
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody AuthDtos.VerifyEmailRequest request) {
+        emailVerificationService.verify(request.token());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/verify-email/resend")
+    public ResponseEntity<Void> resendVerificationEmail(@AuthenticationPrincipal AuthUser user) {
+        emailVerificationService.resend(user.id());
+        return ResponseEntity.noContent().build();
+    }
+
     private ResponseEntity<AuthDtos.AuthResponse> withSession(AuthService.AuthResult result) {
         ResponseCookie cookie = refreshCookie(result.refreshToken(), properties.security().refreshTokenTtl());
         long expiresIn = result.accessToken().expiresInSeconds();
@@ -134,6 +150,6 @@ public class AuthController {
     private AuthService.RequestInfo requestInfo(HttpServletRequest request) {
         return new AuthService.RequestInfo(
                 RequestMetadata.userAgent(request),
-                RequestMetadata.clientIp(request, properties.security().trustForwardedHeaders()));
+                RequestMetadata.clientIp(request, properties.security().trustedClientIpHeader()));
     }
 }

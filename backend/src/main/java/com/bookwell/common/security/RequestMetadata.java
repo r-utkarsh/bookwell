@@ -7,20 +7,20 @@ public final class RequestMetadata {
     private RequestMetadata() {
     }
 
-    public static String clientIp(HttpServletRequest request, boolean trustForwardedHeaders) {
-        if (trustForwardedHeaders) {
-            String cfIp = request.getHeader("CF-Connecting-IP");
-            if (cfIp != null && !cfIp.isBlank()) {
-                return cfIp.trim();
-            }
-            String realIp = request.getHeader("X-Real-IP");
-            if (realIp != null && !realIp.isBlank()) {
-                return realIp.trim();
-            }
-            String forwarded = request.getHeader("X-Forwarded-For");
-            if (forwarded != null && !forwarded.isBlank()) {
-                String[] parts = forwarded.split(",");
-                return parts[parts.length - 1].trim();
+    public static String clientIp(HttpServletRequest request, String trustedHeader) {
+        if (trustedHeader != null && !trustedHeader.isBlank()) {
+            String value = request.getHeader(trustedHeader);
+            if (value != null && !value.isBlank()) {
+                String candidate;
+                if ("x-forwarded-for".equalsIgnoreCase(trustedHeader.trim())) {
+                    String[] parts = value.split(",");
+                    candidate = parts[parts.length - 1].trim();
+                } else {
+                    candidate = value.split(",")[0].trim();
+                }
+                if (candidate.matches("^[0-9a-fA-F:.]{3,45}$")) {
+                    return candidate;
+                }
             }
         }
         return request.getRemoteAddr();

@@ -6,6 +6,7 @@ import com.bookwell.booking.AppointmentRepository;
 import com.bookwell.booking.AppointmentStatus;
 import com.bookwell.common.api.PageResponse;
 import com.bookwell.common.exception.AppExceptions;
+import com.bookwell.common.util.QueryUtils;
 import com.bookwell.notification.Notification;
 import com.bookwell.notification.NotificationRepository;
 import com.bookwell.notification.NotificationStatus;
@@ -77,7 +78,7 @@ public class AdminService {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
         Page<ProviderProfile> providers = providerRepository.searchAdmin(
-                status, query == null ? "" : query.trim(),
+                status, QueryUtils.escapeLike(query),
                 PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.desc("createdAt"))));
         Map<UUID, Long> serviceCounts = new HashMap<>();
         List<UUID> ids = providers.getContent().stream().map(ProviderProfile::getId).toList();
@@ -108,6 +109,9 @@ public class AdminService {
             userRepository.save(user);
             refreshTokenRepository.revokeAllForUser(user.getId(), now);
         } else if (request.status() == ProviderStatus.APPROVED) {
+            if (!user.isEmailVerified()) {
+                throw AppExceptions.conflict("EMAIL_NOT_VERIFIED", "Provider email must be verified before approval.");
+            }
             provider.setStatus(ProviderStatus.APPROVED);
             user.setEnabled(true);
             userRepository.save(user);
@@ -130,7 +134,7 @@ public class AdminService {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 50);
         Page<User> users = userRepository.searchByRole(
-                Role.CUSTOMER, query == null ? "" : query.trim(), enabled,
+                Role.CUSTOMER, QueryUtils.escapeLike(query), enabled,
                 PageRequest.of(safePage, safeSize, Sort.by(Sort.Order.desc("createdAt"))));
         return PageResponse.from(users, user -> new AdminDtos.AdminCustomerDto(
                 user.getId(), user.getEmail(), user.getFullName(), user.getPhone(),

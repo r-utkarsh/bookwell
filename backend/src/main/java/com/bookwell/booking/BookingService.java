@@ -71,6 +71,14 @@ public class BookingService {
         User customer = userRepository.findById(actor.id())
                 .filter(User::isEnabled)
                 .orElseThrow(() -> AppExceptions.unauthorized("Your account is unavailable."));
+        if (!customer.isEmailVerified()) {
+            throw AppExceptions.conflict("EMAIL_NOT_VERIFIED", "Please verify your email address before booking.");
+        }
+        Instant now = Instant.now(clock);
+        if (appointmentRepository.countUpcomingConfirmedForCustomer(customer.getId(), now) >= 5) {
+            throw AppExceptions.conflict("BOOKING_LIMIT_REACHED",
+                    "You have reached the maximum limit of 5 active upcoming bookings.");
+        }
         ProviderProfile provider = providerRepository.findById(request.providerId())
                 .orElseThrow(() -> AppExceptions.notFound("Provider not found."));
         if (provider.getStatus() != ProviderStatus.APPROVED) {
@@ -80,7 +88,6 @@ public class BookingService {
                 .filter(ServiceOffering::isActive)
                 .orElseThrow(() -> AppExceptions.notFound("Service not found."));
         Instant start = validateStart(request.startAt());
-        Instant now = Instant.now(clock);
         if (!start.isAfter(now)) {
             throw AppExceptions.badRequest("PAST_APPOINTMENT", "Choose a time in the future.");
         }

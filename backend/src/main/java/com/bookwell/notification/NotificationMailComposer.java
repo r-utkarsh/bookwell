@@ -36,19 +36,19 @@ public class NotificationMailComposer {
         String lead;
         switch (type) {
             case BOOKING_CONFIRMATION -> {
-                subject = "Your appointment with " + provider.getDisplayName() + " is confirmed";
+                subject = singleLine("Your appointment with " + provider.getDisplayName() + " is confirmed");
                 lead = "Your appointment is confirmed. Here are the details:";
             }
             case CANCELLATION -> {
-                subject = "Your appointment with " + provider.getDisplayName() + " was cancelled";
+                subject = singleLine("Your appointment with " + provider.getDisplayName() + " was cancelled");
                 lead = "Your appointment has been cancelled. If this was unexpected, please contact the provider.";
             }
             case RESCHEDULE -> {
-                subject = "Your appointment with " + provider.getDisplayName() + " was rescheduled";
+                subject = singleLine("Your appointment with " + provider.getDisplayName() + " was rescheduled");
                 lead = "Your appointment has been rescheduled. Your updated details are below.";
             }
             case REMINDER -> {
-                subject = "Reminder: your appointment with " + provider.getDisplayName() + " is coming up";
+                subject = singleLine("Reminder: your appointment with " + provider.getDisplayName() + " is coming up");
                 lead = "This is a friendly reminder about your upcoming appointment.";
             }
             default -> throw new IllegalArgumentException("Unsupported notification type");
@@ -90,6 +90,31 @@ public class NotificationMailComposer {
                 manageUrl
         );
         return new EmailMessage(appointment.getCustomerEmail(), subject, text, html);
+    }
+
+    public EmailMessage composeVerification(String to, String name, String link) {
+        String subject = "Verify your email address for Bookwell";
+        String greeting = "Hi " + (name == null || name.isBlank() ? "there" : name.trim()) + ",";
+        String text = greeting + "\n\n"
+                + "Please verify your email address to book appointments on Bookwell:\n"
+                + link + "\n\n"
+                + "This link will expire in 24 hours.\n\n"
+                + "Thank you,\nBookwell";
+        String html = """
+                <div style="font-family:Arial,Helvetica,sans-serif;color:#1d2b24;max-width:560px;margin:0 auto;padding:24px">
+                  <p style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#6b7a70">Bookwell</p>
+                  <h1 style="font-size:24px;line-height:1.3;margin:8px 0 16px">Verify your email address</h1>
+                  <p>%s</p>
+                  <p>Please confirm your email address to enable booking on Bookwell.</p>
+                  <p style="margin:24px 0"><a href="%s" style="display:inline-block;background:#1d2b24;color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px">Verify Email Address</a></p>
+                  <p style="font-size:12px;color:#6b7a70">This link is valid for 24 hours. If you did not create a Bookwell account, you can safely ignore this email.</p>
+                </div>
+                """.formatted(escape(greeting), link);
+        return new EmailMessage(to, subject, text, html);
+    }
+
+    private static String singleLine(String value) {
+        return value == null ? "" : value.replaceAll("[\\p{Cc}\\u2028\\u2029]+", " ").trim();
     }
 
     private String formatMoney(BigDecimal amount, String currency) {

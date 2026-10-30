@@ -9,6 +9,7 @@ const user = {
   fullName: 'Riya Kapoor',
   role: 'CUSTOMER' as const,
   enabled: true,
+  emailVerified: true,
 }
 
 function authResponse(accessToken: string): AuthResponse {

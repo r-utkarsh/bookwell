@@ -29,10 +29,10 @@ public interface ProviderProfileRepository extends JpaRepository<ProviderProfile
     @Query("""
             select p from ProviderProfile p
             where p.status = :status
-              and (:q = '' or lower(p.displayName) like lower(concat('%', :q, '%'))
-                   or lower(p.businessName) like lower(concat('%', :q, '%'))
-                   or lower(p.category) like lower(concat('%', :q, '%'))
-                   or lower(p.city) like lower(concat('%', :q, '%')))
+              and (:q = '' or lower(p.displayName) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(p.businessName) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(p.category) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(p.city) like lower(concat('%', :q, '%')) escape '!')
               and (:category = '' or lower(p.category) = lower(:category))
             """)
     Page<ProviderProfile> searchPublic(@Param("status") ProviderStatus status,
@@ -44,9 +44,9 @@ public interface ProviderProfileRepository extends JpaRepository<ProviderProfile
     @Query("""
             select p from ProviderProfile p
             where (:status is null or p.status = :status)
-              and (:q = '' or lower(p.displayName) like lower(concat('%', :q, '%'))
-                   or lower(p.businessName) like lower(concat('%', :q, '%'))
-                   or lower(p.user.email) like lower(concat('%', :q, '%')))
+              and (:q = '' or lower(p.displayName) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(p.businessName) like lower(concat('%', :q, '%')) escape '!'
+                   or lower(p.user.email) like lower(concat('%', :q, '%')) escape '!')
             """)
     Page<ProviderProfile> searchAdmin(@Param("status") ProviderStatus status,
                                       @Param("q") String q,

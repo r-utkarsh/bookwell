@@ -46,6 +46,7 @@ app:
   rate-limit:
     enabled: false
     auth-requests-per-minute: 10
+    refresh-requests-per-minute: 30
 
 logging:
   level:

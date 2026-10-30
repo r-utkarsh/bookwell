@@ -239,6 +239,21 @@ export async function logoutRequest(): Promise<void> {
   }
 }
 
+export async function verifyEmailRequest(token: string): Promise<void> {
+  await apiRequest<void>('/auth/verify-email', {
+    method: 'POST',
+    auth: false,
+    body: { token },
+  })
+}
+
+export async function resendVerificationRequest(): Promise<void> {
+  await apiRequest<void>('/auth/verify-email/resend', {
+    method: 'POST',
+    auth: true,
+  })
+}
+
 export function clearSession(): void {
   accessToken = null
 }

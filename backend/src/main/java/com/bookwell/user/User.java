@@ -42,6 +42,17 @@ public class User extends AuditedEntity {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Column(name = "email_verified_at")
+    private java.time.Instant emailVerifiedAt;
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public void markEmailVerified(java.time.Instant at) {
+        this.emailVerifiedAt = at;
+    }
+
     public static User create(String email, String passwordHash, Role role, String fullName, String phone) {
         User user = new User();
         user.id = UUID.randomUUID();
