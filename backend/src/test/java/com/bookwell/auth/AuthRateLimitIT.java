@@ -29,9 +29,13 @@ class AuthRateLimitIT extends IntegrationTestBase {
     @Autowired
     private RateLimitFilter rateLimitFilter;
 
+    @Autowired
+    private LoginAttemptLimiter loginAttemptLimiter;
+
     @org.junit.jupiter.api.BeforeEach
     void resetLimits() {
         rateLimitFilter.clear();
+        loginAttemptLimiter.clear();
     }
 
     @Test

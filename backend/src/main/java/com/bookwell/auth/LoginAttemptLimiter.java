@@ -19,6 +19,14 @@ public class LoginAttemptLimiter {
 
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
 
+    /**
+     * Clears all counters. Intended for test isolation, mirroring
+     * {@link com.bookwell.config.RateLimitFilter#clear()}.
+     */
+    void clear() {
+        windows.clear();
+    }
+
     public boolean isBlocked(String email, String ip) {
         long now = System.currentTimeMillis();
         String safeIp = ip == null ? "" : ip;
