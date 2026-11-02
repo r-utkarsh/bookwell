@@ -1,6 +1,7 @@
 package com.bookwell.schedule;
 
 import com.bookwell.schedule.ScheduleExceptionType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ public final class ScheduleDtos {
     public record ReplaceWeeklyScheduleRequest(
             @NotNull(message = "Weekly hours are required.")
             @Size(max = 35, message = "Too many working intervals.")
-            List<WeeklyIntervalRequest> intervals
+            List<@Valid WeeklyIntervalRequest> intervals
     ) {
     }
 

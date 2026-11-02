@@ -426,7 +426,7 @@ them in your host's dashboard.
 | `ACCESS_TOKEN_TTL` / `REFRESH_TOKEN_TTL` | Token lifetimes | `PT15M` / `P14D` |
 | `AUTH_COOKIE_SECURE` / `AUTH_COOKIE_SAME_SITE` | Refresh cookie flags | `false` / `Lax` |
 | `CORS_ALLOWED_ORIGINS` | Exact comma-separated frontend origins | `http://localhost:5173` |
-| `TRUST_FORWARDED_HEADERS` | Use proxy client IP headers; enable behind Render | `false` |
+| `TRUSTED_CLIENT_IP_HEADER` | Proxy-controlled client-IP header; use `x-forwarded-for` behind Render | blank |
 | `DEFAULT_TIME_ZONE` / `DEFAULT_CURRENCY` | New-provider defaults | `Asia/Kolkata` / `INR` |
 | `BOOKING_START_INTERVAL_MINUTES` | Candidate grid | `30` |
 | `CANCELLATION_CUTOFF` | Customer change window | `PT2H` |

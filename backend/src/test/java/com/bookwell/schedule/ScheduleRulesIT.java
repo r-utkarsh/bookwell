@@ -1,6 +1,7 @@
 package com.bookwell.schedule;
 
 import com.bookwell.booking.AppointmentStatus;
+import com.bookwell.auth.JwtService;
 import com.bookwell.common.exception.ApiException;
 import com.bookwell.provider.ProviderProfile;
 import com.bookwell.provider.ServiceOffering;
@@ -8,7 +9,11 @@ import com.bookwell.support.IntegrationTestBase;
 import com.bookwell.user.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -16,13 +21,41 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@AutoConfigureMockMvc
 class ScheduleRulesIT extends IntegrationTestBase {
 
     private static final LocalDate FRIDAY = LocalDate.parse("2027-03-05");
 
     @Autowired
     private ScheduleService scheduleService;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Test
+    void rejectsMalformedNestedWeeklyIntervalsAsValidationErrors() throws Exception {
+        ProviderProfile provider = newProvider();
+        User owner = providerOwner(provider);
+
+        mockMvc.perform(put("/api/v1/provider/schedule/weekly")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtService.issue(owner).value())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"intervals":[{"dayOfWeek":null,"startTime":"09:00","endTime":"17:00"}]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("intervals[0].dayOfWeek"));
+
+        assertThat(weeklySchedules.findByProviderIdOrderByDayOfWeekAscStartTimeAsc(provider.getId())).isEmpty();
+    }
 
     @Test
     void rejectsOverlappingWeeklyIntervalsBeforeWriting() {

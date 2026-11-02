@@ -137,15 +137,24 @@ public class ScheduleService {
     }
 
     private List<Interval> validateIntervals(List<ScheduleDtos.WeeklyIntervalRequest> requests) {
-        List<Interval> intervals = requests.stream()
-                .map(r -> new Interval(r.dayOfWeek(), r.startTime(), r.endTime()))
-                .sorted(Comparator.comparingInt(Interval::dayOfWeek).thenComparing(Interval::startTime))
-                .toList();
+        if (requests == null) {
+            throw AppExceptions.badRequest("INVALID_INTERVAL", "Weekly hours are required.");
+        }
+
+        List<Interval> intervals = new ArrayList<>(requests.size());
+        for (ScheduleDtos.WeeklyIntervalRequest request : requests) {
+            if (request == null || request.dayOfWeek() == null
+                    || request.startTime() == null || request.endTime() == null) {
+                throw AppExceptions.badRequest("INVALID_INTERVAL", "Day, start time, and end time are required.");
+            }
+            if (request.dayOfWeek() < 1 || request.dayOfWeek() > 7) {
+                throw AppExceptions.badRequest("INVALID_INTERVAL", "Day must be between 1 (Monday) and 7 (Sunday).");
+            }
+            intervals.add(new Interval(request.dayOfWeek(), request.startTime(), request.endTime()));
+        }
+        intervals.sort(Comparator.comparingInt(Interval::dayOfWeek).thenComparing(Interval::startTime));
         Map<Integer, LocalTime> lastEndByDay = new HashMap<>();
         for (Interval interval : intervals) {
-            if (interval.startTime() == null || interval.endTime() == null) {
-                throw AppExceptions.badRequest("INVALID_INTERVAL", "Start and end times are required.");
-            }
             if (!interval.startTime().isBefore(interval.endTime())) {
                 throw AppExceptions.badRequest("INVALID_INTERVAL", "Working interval start time must be before its end time.");
             }
@@ -156,7 +165,7 @@ public class ScheduleService {
             }
             lastEndByDay.put(interval.dayOfWeek(), interval.endTime());
         }
-        return intervals;
+        return List.copyOf(intervals);
     }
 
     private void assertFutureAppointmentsStillFit(ProviderProfile provider, ZoneId zone, List<Interval> intervals) {
