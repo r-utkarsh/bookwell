@@ -7,7 +7,6 @@ services:
     dockerContext: .
     plan: free
     healthCheckPath: /actuator/health
-    maxShutdownDelaySeconds: 60
     autoDeployTrigger: checksPass
     envVars:
       - key: APP_ENV
